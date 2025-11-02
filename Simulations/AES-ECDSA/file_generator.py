@@ -32,5 +32,3 @@ w, h = 10000, 16666  # ~500MB RGB
 big_array = np.random.randint(0, 255, (h, w, 3), dtype=np.uint8)
 big_image = Image.fromarray(big_array)
 big_image.save(os.path.join(output_dir, "Image_500MB.jpg"), format="JPEG", quality=95)
-
-print("✅ Archivos generados incluyendo archivo de 500MB.")
