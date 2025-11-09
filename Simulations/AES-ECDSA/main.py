@@ -89,10 +89,8 @@ for data_type, files in file_groups.items():
                 "ECDSA tiempo (s)": round(ecdsa_times[i], 8),
             })
 
-summary_df = pd.DataFrame(summary_results)
 detailed_df = pd.DataFrame(detailed_results)
 
-summary_df.to_csv("resultados.csv", index=False)
-detailed_df.to_csv("resultados_max.csv", index=False)
+detailed_df.to_csv("resultados.csv", index=False)
 
 print("Done")

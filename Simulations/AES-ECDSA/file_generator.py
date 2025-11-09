@@ -5,7 +5,7 @@ import numpy as np
 output_dir = "files"
 os.makedirs(output_dir, exist_ok=True)
 
-sizes_text = [1024, 500_000, 2_441_000, 500_000_000]  # Añade 500MB
+sizes_text = [1024, 500_000, 2_441_000, 500_000_000]
 sizes_bin = sizes_text.copy()
 resolutions_img = {
     "720p": (1280, 720),
