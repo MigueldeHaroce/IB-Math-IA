@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECDSA Visualizer | Elliptic Curve Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #202020;
+            --card: rgba(15, 15, 15, 0.3);
+            --border: #353535;
+            --fg: #f0f4f8;
+            --muted: #8d929b;
+            --primary: #c0c0c0;
+            --primary-light: rgba(39, 39, 39, 0.1);
+            --primary-dark: rgba(65, 65, 65, 0.6);
+            --emerald: #10b981;
+            --emerald-glow: #353535;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            background: rgba(26, 31, 46, 0.5);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.5rem;
+            background: rgba(0, 188, 212, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        h1 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .header-title-muted {
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .header-formula {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+            background: rgba(45, 55, 72, 0.5);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(45, 55, 72, 0.5);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .canvas-card {
+            border: 1px solid var(--border);
+            background: rgba(15, 15, 15, 0.3);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4 / 4;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+        }
+
+        .canvas-grid {
+            position: absolute;
+            inset: 0;
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(45, 55, 72, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(45, 55, 72, 0.3) 1px, transparent 1px);
+            pointer-events: none;
+            opacity: 0.2;
+        }
+
+        .canvas-labels {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .axis-label-x {
+            position: absolute;
+            bottom: 0.5rem;
+            right: 1rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .axis-label-y {
+            position: absolute;
+            top: 1rem;
+            left: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .canvas-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: var(--muted);
+            padding: 0 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            background: var(--card);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .slider-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 0.5rem;
+            border-radius: 0.25rem;
+            background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--value), rgba(45, 55, 72, 0.5) var(--value), rgba(45, 55, 72, 0.5) 100%);
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 0.5rem var(--primary);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 0.5rem var(--primary);
+        }
+
+        .slider-hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .points-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .point-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .point-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+        }
+
+        .point-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            word-break: break-all;
+        }
+
+        .point-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .point-dot.generator {
+            background: var(--emerald);
+            box-shadow: 0 0 0.5rem var(--emerald-glow);
+        }
+
+        .point-dot.result {
+            background: var(--primary);
+            box-shadow: 0 0 0.5rem var(--primary);
+        }
+
+        .point-display.result {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .toggle-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+        }
+
+        .toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-icon {
+            width: 1.125rem;
+            height: 1.125rem;
+        }
+
+        .toggle-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 3rem;
+            height: 1.5rem;
+            background: rgba(45, 55, 72, 0.5);
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 0.25rem;
+            left: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            background: white;
+            border-radius: 50%;
+            transition: left 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            left: 1.75rem;
+        }
+
+        #kSlider::-webkit-slider-thumb {
+            transform: translateX(calc(var(--value) - 50%));
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="canvas-section">
+            <div class="canvas-card">
+                <div class="canvas-grid"></div>
+                <div class="canvas-labels">
+                    <div class="axis-label-x">x →</div>
+                    <div class="axis-label-y">y ↓</div>
+                </div>
+                <svg id="canvas" viewBox="-1 -1 19 19" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+            <div class="canvas-stats">
+                <p>Campo finito: <span style="color: var(--fg); font-weight: 500;">F₁₇</span></p>
+                <p>Ecuación: <span style="color: var(--fg); font-weight: 500;" id="pointCount">y² = x³ + 2x + 2 (mod 17)</span></p>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <div class="card">
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label class="slider-label">Seleccionar número (k)</label>
+                        <span class="slider-value" id="kValue">1</span>
+                    </div>
+                    <input type="range" id="kSlider" min="1" max="19" value="1">
+                    <p class="slider-hint">Arrastra para multiplicar</p>
+                </div>
+
+                <div class="points-grid">
+                    <div class="point-info">
+                        <span class="point-label">Generador (G)</span>
+                        <div class="point-display">
+                            <span class="point-dot generator"></span>
+                            <span id="generatorCoords">(...)</span>
+                        </div>
+                    </div>
+                    <div class="point-info">
+                        <span class="point-label">Resultado (kG)</span>
+                        <div class="point-display result">
+                            <span class="point-dot result"></span>
+                            <span id="resultCoords">(...)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card toggle-card">
+                <div class="toggle-left">
+                    <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                    <span class="toggle-text">Mostrar conecciones</span>
+                </div>
+                <div class="toggle-switch active" id="toggleSwitch"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Math 
+        const A = 2, B = 2, P = 17;
+
+        function modInverse(a, m) {
+            let m0 = m, x0 = 0, x1 = 1;
+            a = a % m;
+            if (a < 0) a += m;
+            if (m === 1) return 0;
+            while (a > 1) {
+                const q = Math.floor(a / m);
+                let t = m;
+                m = a % m;
+                a = t;
+                t = x0;
+                x0 = x1 - q * x0;
+                x1 = t;
+            }
+            if (x1 < 0) x1 += m0;
+            return x1;
+        }
+
+        function getAllPoints(a, b, p) {
+            const points = [];
+            for (let x = 0; x < p; x++) {
+                const rhs = (Math.pow(x, 3) + a * x + b) % p;
+                for (let y = 0; y < p; y++) {
+                    if ((y * y) % p === rhs) {
+                        points.push({ x, y, isInfinity: false });
+                    }
+                }
+            }
+            return points;
+        }
+
+        function addPoints(p1, p2, a, p) {
+            if (p1.isInfinity) return p2;
+            if (p2.isInfinity) return p1;
+
+            if (p1.x === p2.x && p1.y !== p2.y) {
+                return { x: 0, y: 0, isInfinity: true };
+            }
+
+            let m;
+            if (p1.x === p2.x && p1.y === p2.y) {
+                if (p1.y === 0) return { x: 0, y: 0, isInfinity: true };
+                let num = (3 * p1.x * p1.x + a) % p;
+                if (num < 0) num += p;
+                const den = modInverse(2 * p1.y, p);
+                m = (num * den) % p;
+            } else {
+                let num = (p2.y - p1.y) % p;
+                if (num < 0) num += p;
+                let dx = (p2.x - p1.x) % p;
+                if (dx < 0) dx += p;
+                const den = modInverse(dx, p);
+                m = (num * den) % p;
+            }
+
+            if (m < 0) m += p;
+            let x3 = (m * m - p1.x - p2.x) % p;
+            if (x3 < 0) x3 += p;
+            let y3 = (m * (p1.x - x3) - p1.y) % p;
+            if (y3 < 0) y3 += p;
+
+            return { x: x3, y: y3, isInfinity: false };
+        }
+
+        function multiplyPoint(point, k, a, p) {
+            let result = { x: 0, y: 0, isInfinity: true };
+            let addend = point;
+            let scalar = k;
+
+            while (scalar > 0) {
+                if (scalar & 1) {
+                    result = addPoints(result, addend, a, p);
+                }
+                addend = addPoints(addend, addend, a, p);
+                scalar >>= 1;
+            }
+            return result;
+        }
+
+        // UI State 
+        const allPoints = getAllPoints(A, B, P);
+        const generator = allPoints[Math.floor(allPoints.length / 2)];
+        
+        let k = 1;
+        let showConnections = true;
+
+
+        // UI Updates
+        function updateDisplay() {
+            const currentPoint = multiplyPoint(generator, k, A, P);
+            
+            document.getElementById('kValue').textContent = k;
+            document.getElementById('generatorCoords').textContent = `(${generator.x}, ${generator.y})`;
+            document.getElementById('resultCoords').textContent = currentPoint.isInfinity ? '∞ (Infinity)' : `(${currentPoint.x}, ${currentPoint.y})`;
+            
+            redrawCanvas();
+        }
+
+        function redrawCanvas() {
+            const svg = document.getElementById('canvas');
+            svg.innerHTML = '';
+
+            // Grid lines
+            for (let i = 0; i <= P; i++) {
+                const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                vLine.setAttribute('x1', i);
+                vLine.setAttribute('y1', 0);
+                vLine.setAttribute('x2', i);
+                vLine.setAttribute('y2', P);
+                vLine.setAttribute('stroke', 'currentColor');
+                vLine.setAttribute('stroke-opacity', '0.05');
+                vLine.setAttribute('stroke-width', '0.05');
+                svg.appendChild(vLine);
+
+                const hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                hLine.setAttribute('x1', 0);
+                hLine.setAttribute('y1', i);
+                hLine.setAttribute('x2', P);
+                hLine.setAttribute('y2', i);
+                hLine.setAttribute('stroke', 'currentColor');
+                hLine.setAttribute('stroke-opacity', '0.05');
+                hLine.setAttribute('stroke-width', '0.05');
+                svg.appendChild(hLine);
+            }
+
+            // Axis numbers
+            for (let i = 0; i < P; i++) {
+                const xText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                xText.setAttribute('x', i);
+                xText.setAttribute('y', P + 1);
+                xText.setAttribute('font-size', '0.4');
+                xText.setAttribute('fill', 'currentColor');
+                xText.setAttribute('opacity', '0.5');
+                xText.setAttribute('text-anchor', 'middle');
+                xText.textContent = i;
+                svg.appendChild(xText);
+
+                const yText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                yText.setAttribute('x', -0.8);
+                yText.setAttribute('y', P - i);
+                yText.setAttribute('font-size', '0.4');
+                yText.setAttribute('fill', 'currentColor');
+                yText.setAttribute('opacity', '0.5');
+                yText.textContent = i;
+                svg.appendChild(yText);
+            }
+
+            // All points on curve
+            allPoints.forEach(pt => {
+                const isGen = pt.x === generator.x && pt.y === generator.y;
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', pt.x);
+                circle.setAttribute('cy', P - pt.y);
+                circle.setAttribute('r', isGen ? '0.4' : '0.25');
+                circle.setAttribute('fill', isGen ? 'var(--emerald)' : 'var(--fg)');
+                circle.setAttribute('opacity', isGen ? '1' : '0.3');
+                svg.appendChild(circle);
+            });
+
+            // Connections
+            if (showConnections) {
+                const pathPoints = [];
+                for (let i = 1; i <= Math.min(k, 20); i++) {
+                    pathPoints.push(multiplyPoint(generator, i, A, P));
+                }
+
+                for (let idx = 1; idx < pathPoints.length; idx++) {
+                    const pt = pathPoints[idx];
+                    const prevPt = pathPoints[idx - 1];
+                    if (!pt.isInfinity && !prevPt.isInfinity) {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', prevPt.x);
+                        line.setAttribute('y1', P - prevPt.y);
+                        line.setAttribute('x2', pt.x);
+                        line.setAttribute('y2', P - pt.y);
+                        line.setAttribute('stroke', 'var(--primary)');
+                        line.setAttribute('stroke-width', '0.12');
+                        line.setAttribute('stroke-dasharray', '0.3,0.2');
+                        line.setAttribute('opacity', '0.5');
+                        svg.appendChild(line);
+                    }
+                }
+            }
+
+            // Current kG point
+            const currentPoint = multiplyPoint(generator, k, A, P);
+            if (!currentPoint.isInfinity) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', currentPoint.x);
+                circle.setAttribute('cy', P - currentPoint.y);
+                circle.setAttribute('r', '0.5');
+                circle.setAttribute('fill', 'var(--primary)');
+                circle.setAttribute('filter', 'drop-shadow(0 0 0.2rem var(--primary))');
+                svg.appendChild(circle);
+            }
+
+            // Generator label
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', generator.x);
+            label.setAttribute('y', P - generator.y - 0.8);
+            label.setAttribute('font-size', '0.5');
+            label.setAttribute('fill', 'var(--emerald)');
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('font-weight', 'bold');
+            label.textContent = 'G';
+            svg.appendChild(label);
+        }
+
+        document.getElementById('kSlider').addEventListener('input', (e) => {
+            k = parseInt(e.target.value);
+            let show = k - 1;
+            if (show > 19/4) {
+                show += 0.5;
+            } 
+            if (show > (19*3)/4) {
+                show += 0.45;
+            }
+            const value = (show / e.target.max) * 100;
+            e.target.style.setProperty('--value', (value) + '%');
+            updateDisplay();
+        });
+
+        document.getElementById('toggleSwitch').addEventListener('click', () => {
+            showConnections = !showConnections;
+            document.getElementById('toggleSwitch').classList.toggle('active');
+            redrawCanvas();
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>
