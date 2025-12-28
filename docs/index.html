@@ -374,7 +374,7 @@
                     <div class="axis-label-x">x →</div>
                     <div class="axis-label-y">y ↓</div>
                 </div>
-                <svg id="canvas" viewBox="-1 -1 19 19" preserveAspectRatio="xMidYMid meet"></svg>
+                <svg id="canvas" viewBox="-1 -1 19 20" preserveAspectRatio="xMidYMid meet"></svg>
             </div>
             <div class="canvas-stats">
                 <p>Campo finito: <span style="color: var(--fg); font-weight: 500;">F₁₇</span></p>
@@ -389,7 +389,7 @@
                         <label class="slider-label">Seleccionar número (k)</label>
                         <span class="slider-value" id="kValue">1</span>
                     </div>
-                    <input type="range" id="kSlider" min="1" max="19" value="1">
+                    <input type="range" id="kSlider" min="1" max="17" value="1">
                     <p class="slider-hint">Arrastra para multiplicar</p>
                 </div>
 
@@ -456,6 +456,11 @@
                     }
                 }
             }
+            // Remove the 8th point (index 7) if it exists
+            if (points.length >= 7) {
+                points.splice(8, 1);
+            }
+            console.log(points);
             return points;
         }
 
@@ -639,10 +644,10 @@
         document.getElementById('kSlider').addEventListener('input', (e) => {
             k = parseInt(e.target.value);
             let show = k - 1;
-            if (show > 19/4) {
+            if (show > 17/4) {
                 show += 0.5;
             } 
-            if (show > (19*3)/4) {
+            if (show > (17*3)/4) {
                 show += 0.45;
             }
             const value = (show / e.target.max) * 100;
@@ -659,6 +664,5 @@
         updateDisplay();
     </script>
 </body>
-
 </html>
 
