@@ -1,4 +1,4 @@
-# IB Math IA — Matemáticas IB (5784-5786)
+# IB Math IA
 
 Este repositorio contiene el código, análisis y documentación de mi **Internal Assessment (IA) de Matemáticas** para el Programa del IB del curso 2024-2026.
 
